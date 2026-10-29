@@ -1,0 +1,46 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "cn.didichuxing/ride",
+  "title": "滴滴出行",
+  "description": "打车：预估价格、叫车、查询订单",
+  "version": "2026.10.29",
+  "websiteUrl": "https://mcp.didichuxing.com/",
+  "remotes": [
+    { "type": "streamable-http", "url": "https://mcp.didichuxing.com/mcp-servers" }
+  ],
+  "_meta": {
+    "watt/connect": {
+      "status": "active",
+      "category": ["mobility", "taxi"],
+      "credential": {
+        "kind": "static_token",
+        "placement": { "in": "query", "name": "key" },
+        "portal_url": "https://mcp.didichuxing.com/",
+        "redact_patterns": ["key=[^&\\s\"]+"]
+      },
+      "auth_failure": [
+        { "http_status": 200, "body_contains": "Missing KEY parameter" },
+        { "jsonrpc_error_code": -32002 }
+      ],
+      "rate_limited": [
+        { "jsonrpc_error_code": -32001 }
+      ],
+      "protocol_versions": ["2025-06-18", "2025-03-26"],
+      "modes": { "proxy": true, "direct": true },
+      "policy": {
+        "preview_before": { "taxi_create_order": "taxi_estimate" },
+        "payment_link_fields": []
+      },
+      "tools": [
+        { "name": "taxi_estimate", "effect": "read" },
+        { "name": "taxi_create_order", "effect": "order" }
+      ],
+      "sandbox": { "url": "https://mcp.didichuxing.com/mcp-servers-sandbox" },
+      "notes": [
+        "正式环境叫车会真实扣费；测试请用 sandbox。",
+        "下单需要 Pro 版（激活码）；Beta 版只能查价和跳转 App。",
+        "直连模式下 key 会以明文 URL 形式写进 agent 配置。"
+      ]
+    }
+  }
+}

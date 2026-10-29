@@ -1,0 +1,44 @@
+[package]
+name = "watt-connect"
+description = "One MCP for your agent to discover and call official merchant MCP servers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "watt-connect"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+chrono.workspace = true
+clap.workspace = true
+connect-catalog.workspace = true
+connect-installer.workspace = true
+connect-server.workspace = true
+connect-types.workspace = true
+connect-upstream.workspace = true
+connect-vault.workspace = true
+directories.workspace = true
+hex.workspace = true
+rand.workspace = true
+rmcp = { workspace = true, features = ["server", "transport-io"] }
+rpassword.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+connect-testkit.workspace = true
+reqwest = { workspace = true, features = ["form"] }
+rmcp = { workspace = true, features = ["client", "transport-child-process"] }
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,37 @@
+{
+  "name": "watt-connect",
+  "version": "0.1.0",
+  "description": "One MCP for your agent to discover and call official merchant MCP servers (Luckin, McDonald's China, Didi, ...)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wattetheria/watt-connect.git"
+  },
+  "type": "commonjs",
+  "bin": {
+    "watt-connect": "bin/watt-connect.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "optionalDependencies": {
+    "@wattetheria/connect-darwin-arm64": "0.1.0",
+    "@wattetheria/connect-darwin-x64": "0.1.0",
+    "@wattetheria/connect-linux-arm64": "0.1.0",
+    "@wattetheria/connect-linux-x64": "0.1.0",
+    "@wattetheria/connect-win32-arm64": "0.1.0",
+    "@wattetheria/connect-win32-x64": "0.1.0"
+  },
+  "scripts": {
+    "check": "node --check bin/watt-connect.js && node --check lib/native.js && node --check ../scripts/stage-native.js && node --check ../scripts/set-version.js && node --check ../scripts/check-native-package.js && node --test test/native.test.js"
+  },
+  "keywords": ["mcp", "model-context-protocol", "agent", "luckin", "mcdonalds", "didi", "wattetheria"]
+}

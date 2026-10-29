@@ -1,0 +1,47 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "cn.mcd/order",
+  "title": "麦当劳",
+  "description": "麦当劳点餐：查门店、查菜单、算价、下单（McDonald's China ordering）",
+  "version": "2026.10.29",
+  "websiteUrl": "https://github.com/M-China/mcd-mcp-server",
+  "remotes": [
+    { "type": "streamable-http", "url": "https://mcp.mcd.cn" }
+  ],
+  "_meta": {
+    "watt/connect": {
+      "status": "active",
+      "category": ["food", "fast-food"],
+      "credential": {
+        "kind": "static_token",
+        "placement": { "in": "header", "name": "Authorization", "format": "Bearer {token}" },
+        "portal_url": "https://github.com/M-China/mcd-mcp-server",
+        "redact_patterns": []
+      },
+      "auth_failure": [
+        { "http_status": 401 },
+        { "http_status": 403, "json_path": "$.code", "equals": "0001" }
+      ],
+      "protocol_versions": ["2025-06-18", "2025-03-26"],
+      "modes": { "proxy": true, "direct": true, "default": "direct" },
+      "policy": {
+        "preview_before": {
+          "create-order": "calculate-price",
+          "mall-create-order": "calculate-price",
+          "party-order-create": "calculate-price"
+        },
+        "payment_link_fields": ["payUrl", "payLink", "paymentUrl"]
+      },
+      "tools": [
+        { "name": "calculate-price", "effect": "read" },
+        { "name": "create-order", "effect": "order" },
+        { "name": "mall-create-order", "effect": "order" },
+        { "name": "party-order-create", "effect": "order" }
+      ],
+      "notes": [
+        "条款限制商业转售与流量变现；取得书面授权前默认使用直连模式。",
+        "据第三方资料只支持 2025-06-18 及更早的协议版本。"
+      ]
+    }
+  }
+}

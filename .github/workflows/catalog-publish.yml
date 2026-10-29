@@ -1,0 +1,54 @@
+name: catalog-publish
+
+# Catalog change on main -> validate -> build snapshot -> sign -> publish to
+# GitHub Pages at /catalog/v1/{catalog.json,catalog.sig}
+# (connect_catalog::DEFAULT_CATALOG_URL). The signing key exists only in the
+# CATALOG_SIGNING_KEY secret; its public key must be listed in catalog/catalog.pub.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "catalog/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: catalog-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.97.0"
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --locked -p watt-connect-catalog
+      - run: target/debug/watt-connect-catalog validate --dir catalog
+      - run: target/debug/watt-connect-catalog build --dir catalog --out site/catalog/v1/catalog.json
+      - name: Sign
+        env:
+          WATT_CONNECT_CATALOG_SIGNING_KEY: ${{ secrets.CATALOG_SIGNING_KEY }}
+        run: |
+          target/debug/watt-connect-catalog sign --catalog site/catalog/v1/catalog.json --out site/catalog/v1/catalog.sig
+          target/debug/watt-connect-catalog verify --catalog site/catalog/v1/catalog.json --sig site/catalog/v1/catalog.sig
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,7 @@
+{
+  "description": "initialize without Authorization (2026-10-29); also carries WWW-Authenticate resource_metadata",
+  "http_status": 401,
+  "content_type": "application/json",
+  "body": "{\"message\":\"oauth token is not found\"}",
+  "expected": "CREDENTIAL_INVALID"
+}

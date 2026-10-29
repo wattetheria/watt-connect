@@ -1,0 +1,7 @@
+target/
+/node_modules/
+npm/node_modules/
+npm/native/*/bin/
+*.tgz
+.DS_Store
+/dist/

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "io.wattetheria/node",
+  "title": "Wattetheria",
+  "description": "本机 Wattetheria 节点的 MCP（本地 stdio，只支持直连）",
+  "version": "2026.10.29",
+  "websiteUrl": "https://github.com/wattetheria/wattetheria",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "wattetheria",
+      "transport": { "type": "stdio" },
+      "runtimeHint": "npx",
+      "packageArguments": [{ "type": "positional", "value": "mcp-proxy" }]
+    }
+  ],
+  "_meta": {
+    "watt/connect": {
+      "status": "active",
+      "category": ["agent", "network"],
+      "modes": { "proxy": false, "direct": true },
+      "notes": ["节点身份密钥与商家 token 互不共享。"]
+    }
+  }
+}

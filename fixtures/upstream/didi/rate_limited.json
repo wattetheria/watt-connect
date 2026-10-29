@@ -1,0 +1,9 @@
+{
+  "description": "rate limiting as JSON-RPC -32001 (per plan §7)",
+  "http_status": 200,
+  "content_type": "application/json",
+  "body": "{\"jsonrpc\":\"2.0\",\"id\":3,\"error\":{\"code\":-32001,\"message\":\"rate limited\"}}",
+  "jsonrpc_error_code": -32001,
+  "jsonrpc_error_message": "rate limited",
+  "expected": "RATE_LIMITED"
+}
