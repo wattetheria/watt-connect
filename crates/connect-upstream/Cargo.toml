@@ -1,0 +1,29 @@
+[package]
+name = "connect-upstream"
+description = "watt-connect: Streamable HTTP MCP client connections to merchant servers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+bytes.workspace = true
+connect-types.workspace = true
+futures.workspace = true
+http.workspace = true
+reqwest.workspace = true
+rmcp = { workspace = true, features = ["client", "transport-streamable-http-client"] }
+serde_json.workspace = true
+sse-stream.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+url.workspace = true
+zeroize.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+connect-catalog.workspace = true
+connect-testkit.workspace = true

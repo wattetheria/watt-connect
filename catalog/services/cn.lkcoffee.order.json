@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "cn.lkcoffee/order",
+  "title": "瑞幸咖啡",
+  "description": "查门店、搜商品、预览价格、下单",
+  "version": "2026.10.29",
+  "websiteUrl": "https://open.lkcoffee.com/",
+  "remotes": [
+    { "type": "streamable-http", "url": "https://gwmcp.lkcoffee.com/order/user/mcp" }
+  ],
+  "_meta": {
+    "watt/connect": {
+      "status": "active",
+      "category": ["food", "coffee"],
+      "credential": {
+        "kind": "static_token",
+        "placement": { "in": "header", "name": "Authorization", "format": "Bearer {token}" },
+        "portal_url": "https://open.lkcoffee.com/",
+        "ttl_hint_days": 30,
+        "redact_patterns": []
+      },
+      "auth_failure": [
+        { "http_status": 401 }
+      ],
+      "protocol_versions": ["2025-06-18", "2025-03-26"],
+      "modes": { "proxy": true, "direct": true },
+      "policy": {
+        "preview_before": { "createOrder": "previewOrder" },
+        "payment_link_fields": ["payUrl", "qrCode"]
+      },
+      "tools": [
+        { "name": "queryShopList", "effect": "read" },
+        { "name": "searchProductForMcp", "effect": "read" },
+        { "name": "previewOrder", "effect": "read" },
+        { "name": "createOrder", "effect": "order" },
+        { "name": "cancelOrder", "effect": "write" }
+      ],
+      "notes": [
+        "下单后返回支付链接或二维码，需要用户本人完成支付。",
+        "token 约每 30 天失效一次，失效后到开放平台重新获取。"
+      ]
+    }
+  }
+}

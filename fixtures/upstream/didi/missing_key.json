@@ -1,0 +1,7 @@
+{
+  "description": "initialize without the key query parameter (2026-10-29)",
+  "http_status": 200,
+  "content_type": "text/plain",
+  "body": "Missing KEY parameter",
+  "expected": "CREDENTIAL_INVALID"
+}

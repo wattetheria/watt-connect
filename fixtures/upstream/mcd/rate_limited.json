@@ -1,0 +1,7 @@
+{
+  "description": "HTTP 429 (per plan §7)",
+  "http_status": 429,
+  "content_type": "text/plain",
+  "body": "Too Many Requests",
+  "expected": "RATE_LIMITED"
+}

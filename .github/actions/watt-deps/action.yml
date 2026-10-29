@@ -1,0 +1,31 @@
+name: Watt sibling crates
+description: >
+  Check out watt-credential and watt-did next to this repository
+  (../watt-credential, ../watt-did), matching the path dependencies in Cargo.toml.
+inputs:
+  token:
+    description: Token able to read the Watt repositories.
+    required: false
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: wattetheria/watt-did
+        path: deps/watt-did
+        token: ${{ inputs.token }}
+    - uses: actions/checkout@v4
+      with:
+        repository: wattetheria/watt-credential
+        path: deps/watt-credential
+        token: ${{ inputs.token }}
+    - name: Place sibling crates
+      shell: bash
+      run: |
+        parent="$(dirname "$GITHUB_WORKSPACE")"
+        for dep in watt-did watt-credential; do
+          rm -rf "$parent/$dep"
+          cp -R "deps/$dep" "$parent/$dep"
+        done
+        rm -rf deps

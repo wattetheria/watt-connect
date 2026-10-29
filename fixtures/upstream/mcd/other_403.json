@@ -1,0 +1,7 @@
+{
+  "description": "synthetic: a 403 with another code must not be treated as an expired credential",
+  "http_status": 403,
+  "content_type": "application/json",
+  "body": "{\"code\":\"0042\",\"msg\":\"门店休息中\"}",
+  "expected": "UPSTREAM_ERROR"
+}

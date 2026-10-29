@@ -1,0 +1,9 @@
+{
+  "description": "initialize with a fake key (2026-10-29)",
+  "http_status": 200,
+  "content_type": "application/json",
+  "body": "{\"jsonrpc\":\"2.0\",\"id\":0,\"error\":{\"code\":-32002,\"message\":\"auth failed\"}}",
+  "jsonrpc_error_code": -32002,
+  "jsonrpc_error_message": "auth failed",
+  "expected": "CREDENTIAL_INVALID"
+}

@@ -1,0 +1,7 @@
+{
+  "description": "initialize without Authorization (2026-10-29)",
+  "http_status": 403,
+  "content_type": "application/json",
+  "body": "{\"code\":\"0001\",\"msg\":\"系统错误\"}",
+  "expected": "CREDENTIAL_INVALID"
+}

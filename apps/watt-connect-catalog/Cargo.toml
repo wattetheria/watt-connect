@@ -1,0 +1,22 @@
+[package]
+name = "watt-connect-catalog"
+description = "Catalog maintenance: validate, build, sign, verify and diff the watt-connect catalog. Not shipped to users."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+clap.workspace = true
+connect-catalog.workspace = true
+serde_json.workspace = true
+watt-credential.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

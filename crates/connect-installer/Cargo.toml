@@ -1,0 +1,21 @@
+[package]
+name = "connect-installer"
+description = "watt-connect direct mode: write merchant MCP servers into an agent's own configuration"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+chrono.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+toml_edit.workspace = true
+tracing.workspace = true
+which.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

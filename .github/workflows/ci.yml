@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: fmt / clippy / test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/watt-deps
+        with:
+          token: ${{ secrets.CROSS_REPO_TOKEN || github.token }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.97.0"
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+
+  catalog:
+    name: catalog schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/watt-deps
+        with:
+          token: ${{ secrets.CROSS_REPO_TOKEN || github.token }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.97.0"
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo run --locked -p watt-connect-catalog -- validate --dir catalog
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: JSON Schema check of the _meta extension
+        run: npx --yes -p ajv-cli@5 -p ajv-formats@3 ajv validate --spec=draft2020 -c ajv-formats -s catalog/schema/watt-connect-meta.schema.json -d "catalog/services/*.json"
+
+  npm:
+    name: npm launcher
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm run check
+        working-directory: npm

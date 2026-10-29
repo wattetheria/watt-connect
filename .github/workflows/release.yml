@@ -1,0 +1,107 @@
+name: release
+
+# Build watt-connect for six platforms and publish the npm packages:
+# @wattetheria/connect-<platform>-<arch> first, then the `watt-connect` launcher.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish (semver, no "v").
+        required: true
+        type: string
+      dry_run:
+        description: Build and pack, but do not publish.
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: build ${{ matrix.key }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { key: darwin-arm64, runner: macos-latest, platform: darwin, arch: arm64, exe: "" }
+          - { key: darwin-x64, runner: macos-15-intel, platform: darwin, arch: x64, exe: "" }
+          - { key: linux-arm64, runner: ubuntu-24.04-arm, platform: linux, arch: arm64, exe: "" }
+          - { key: linux-x64, runner: ubuntu-latest, platform: linux, arch: x64, exe: "" }
+          - { key: win32-arm64, runner: windows-11-arm, platform: win32, arch: arm64, exe: ".exe" }
+          - { key: win32-x64, runner: windows-latest, platform: win32, arch: x64, exe: ".exe" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate version
+        shell: bash
+        run: |
+          echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
+          grep -q "^version = \"${{ inputs.version }}\"" Cargo.toml || {
+            echo "Cargo.toml [workspace.package] version must equal ${{ inputs.version }}" >&2; exit 1; }
+      - uses: ./.github/actions/watt-deps
+        with:
+          token: ${{ secrets.CROSS_REPO_TOKEN || github.token }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.97.0"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-${{ matrix.key }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build --release --locked -p watt-connect
+      - run: node scripts/set-version.js ${{ inputs.version }}
+      - run: node scripts/stage-native.js --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --source target/release/watt-connect${{ matrix.exe }}
+      - run: node scripts/check-native-package.js npm/native/${{ matrix.key }}
+      - run: npm pack --dry-run
+        working-directory: npm/native/${{ matrix.key }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.key }}
+          path: npm/native/${{ matrix.key }}/bin/
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Assemble packages
+        run: |
+          node scripts/set-version.js ${{ inputs.version }}
+          for dir in artifacts/native-*; do
+            key="${dir#artifacts/native-}"
+            mkdir -p "npm/native/$key/bin"
+            cp -R "$dir/." "npm/native/$key/bin/"
+            chmod +x npm/native/$key/bin/* || true
+            node scripts/check-native-package.js "npm/native/$key"
+          done
+      - name: Publish platform packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          flag=""; [ "${{ inputs.dry_run }}" = "true" ] && flag="--dry-run"
+          for dir in npm/native/*/; do
+            npm publish "$dir" --access public $flag
+          done
+      - name: Publish watt-connect
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          flag=""; [ "${{ inputs.dry_run }}" = "true" ] && flag="--dry-run"
+          npm publish npm --access public $flag

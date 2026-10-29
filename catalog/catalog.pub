@@ -1,0 +1,11 @@
+# Trusted Ed25519 public keys (hex) for signed watt-connect catalog snapshots.
+# One key per line. This file is compiled into the watt-connect binary.
+#
+# The matching private key is NEVER committed. It lives only in the
+# CATALOG_SIGNING_KEY secret used by .github/workflows/catalog-publish.yml.
+#
+# Generate a key pair with:
+#   cargo run -p watt-connect-catalog -- keygen
+# then paste the printed public key below. Until a key is listed here,
+# watt-connect only uses the catalog snapshot bundled into the binary and
+# rejects every remotely fetched catalog.

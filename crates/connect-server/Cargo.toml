@@ -1,0 +1,31 @@
+[package]
+name = "connect-server"
+description = "watt-connect MCP server exposing the meta tools to agents"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+chrono.workspace = true
+connect-catalog.workspace = true
+connect-installer.workspace = true
+connect-policy.workspace = true
+connect-types.workspace = true
+connect-upstream.workspace = true
+connect-vault.workspace = true
+rmcp = { workspace = true, features = ["server"] }
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+url.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+connect-testkit.workspace = true
+rmcp = { workspace = true, features = ["server", "client"] }
+tempfile.workspace = true
+
+[lints]
+workspace = true
