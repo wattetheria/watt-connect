@@ -3,7 +3,7 @@
   "name": "cn.lkcoffee/order",
   "title": "瑞幸咖啡",
   "description": "查门店、搜商品、预览价格、下单",
-  "version": "2026.10.29",
+  "version": "2026.10.30",
   "websiteUrl": "https://open.lkcoffee.com/",
   "remotes": [
     { "type": "streamable-http", "url": "https://gwmcp.lkcoffee.com/order/user/mcp" }
@@ -26,13 +26,16 @@
       "modes": { "proxy": true, "direct": true },
       "policy": {
         "preview_before": { "createOrder": "previewOrder" },
-        "payment_link_fields": ["payUrl", "qrCode"]
+        "payment_link_fields": ["payOrderQrCodeUrl"]
       },
       "tools": [
         { "name": "queryShopList", "effect": "read" },
         { "name": "searchProductForMcp", "effect": "read" },
+        { "name": "queryProductDetailInfo", "effect": "read" },
+        { "name": "switchProduct", "effect": "read" },
         { "name": "previewOrder", "effect": "read" },
         { "name": "createOrder", "effect": "order" },
+        { "name": "queryOrderDetailInfo", "effect": "read" },
         { "name": "cancelOrder", "effect": "write" }
       ],
       "notes": [

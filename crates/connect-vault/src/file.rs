@@ -1,4 +1,5 @@
-//! Encrypted file fallback for machines without a usable keychain.
+//! Encrypted file vault: the default on macOS, and the fallback for machines
+//! without a usable keychain.
 //!
 //! `vault.enc` holds `nonce || XChaCha20-Poly1305(json map)`; the 32-byte key
 //! is in `vault.key`. Both files are created with mode `0600`. This protects

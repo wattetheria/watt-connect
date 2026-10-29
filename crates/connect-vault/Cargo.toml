@@ -1,6 +1,6 @@
 [package]
 name = "connect-vault"
-description = "watt-connect credential storage (system keychain, encrypted file fallback) and log redaction"
+description = "watt-connect credential storage (encrypted file, system keychain) and log redaction"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

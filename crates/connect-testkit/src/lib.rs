@@ -3,7 +3,7 @@
 //! The mocks speak just enough Streamable HTTP MCP (JSON and SSE responses,
 //! `Mcp-Session-Id`) for watt-connect's client, and reproduce how each real
 //! merchant reports a missing/invalid credential, rate limiting and protocol
-//! version rejection (see `docs/WATT_CONNECT_PLAN.md` §3).
+//! version rejection.
 
 pub mod mock_merchant;
 pub mod profiles;

@@ -229,6 +229,20 @@ async fn luckin_preview_then_order_with_payment_link() {
         body.contains("payUrl: https://pay.lkcoffee.example/lk-1"),
         "{body}"
     );
+    // Clients that only show structuredContent must see the notice too.
+    let structured = order.structured_content.as_ref().unwrap();
+    let notice = &structured["watt_connect"];
+    assert!(
+        notice["payment_notice"]
+            .as_str()
+            .unwrap()
+            .contains("用户本人完成支付"),
+        "{structured}"
+    );
+    assert_eq!(
+        notice["payment_links"][0]["value"],
+        "https://pay.lkcoffee.example/lk-1"
+    );
 
     // The preview was consumed by the order.
     let again = h

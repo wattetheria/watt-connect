@@ -8,7 +8,7 @@ use connect_catalog::{ServerEntry, ServiceStatus};
 use connect_policy::{GateDecision, ToolPolicy, extract_payment_links, payment_notice};
 use connect_types::{ConnectError, ConnectErrorCode, ConnectionMode, CredentialStatus, ToolEffect};
 use rmcp::model::{ContentBlock, JsonObject};
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::time::Instant;
 
 pub(super) async fn run(server: &ConnectServer, args: &JsonObject) -> Result<Output, ConnectError> {
@@ -150,9 +150,16 @@ pub(super) async fn run(server: &ConnectServer, args: &JsonObject) -> Result<Out
     if is_order {
         let as_json = serde_json::to_value(&result).unwrap_or(Value::Null);
         let links = extract_payment_links(&as_json, &meta.policy.payment_link_fields);
-        result
-            .content
-            .push(ContentBlock::text(payment_notice(&links)));
+        let notice = payment_notice(&links);
+        // Clients that receive `structuredContent` show it instead of the text
+        // blocks, so the notice has to travel inside it as well.
+        if let Some(Value::Object(structured)) = result.structured_content.as_mut() {
+            structured.insert(
+                "watt_connect".into(),
+                json!({ "payment_notice": notice, "payment_links": links }),
+            );
+        }
+        result.content.push(ContentBlock::text(notice));
     }
     Ok(Output::Passthrough(result))
 }

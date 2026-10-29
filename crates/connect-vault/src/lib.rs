@@ -1,7 +1,8 @@
 //! Credential storage and redaction.
 //!
-//! Merchant tokens never leave the user's machine: they are stored in the
-//! system keychain (or an encrypted file where no keychain exists), are never
+//! Merchant tokens never leave the user's machine: they are stored in an
+//! encrypted file (macOS, or where no keychain exists) or the system
+//! keychain (Windows, Linux), are never
 //! written to config files or logs, and are masked wherever text might be
 //! logged or returned to the agent.
 
@@ -75,7 +76,8 @@ pub fn entry_name(service: &ServiceId) -> String {
 /// Which backend to use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VaultPreference {
-    /// Keychain when it works, otherwise the encrypted file.
+    /// The encrypted file on macOS; elsewhere the keychain when it works,
+    /// otherwise the encrypted file.
     Auto,
     Keyring,
     File,
@@ -104,6 +106,12 @@ pub fn open_vault(
     match preference {
         VaultPreference::Keyring => Ok(Box::new(KeyringVault::new())),
         VaultPreference::File => Ok(Box::new(FileVault::open(data_dir)?)),
+        // macOS Keychain ties its access list to the binary's code signature;
+        // without a Developer ID signature every rebuild or upgrade asks the
+        // user for their login password again, once per read.
+        VaultPreference::Auto if cfg!(target_os = "macos") => {
+            Ok(Box::new(FileVault::open(data_dir)?))
+        }
         VaultPreference::Auto => {
             if KeyringVault::available() {
                 Ok(Box::new(KeyringVault::new()))

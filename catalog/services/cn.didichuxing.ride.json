@@ -3,7 +3,7 @@
   "name": "cn.didichuxing/ride",
   "title": "滴滴出行",
   "description": "打车：预估价格、叫车、查询订单",
-  "version": "2026.10.29",
+  "version": "2026.10.30",
   "websiteUrl": "https://mcp.didichuxing.com/",
   "remotes": [
     { "type": "streamable-http", "url": "https://mcp.didichuxing.com/mcp-servers" }
@@ -32,12 +32,24 @@
         "payment_link_fields": []
       },
       "tools": [
+        { "name": "maps_textsearch", "effect": "read" },
+        { "name": "maps_place_around", "effect": "read" },
+        { "name": "maps_regeocode", "effect": "read" },
+        { "name": "maps_direction_driving", "effect": "read" },
+        { "name": "maps_direction_transit", "effect": "read" },
+        { "name": "maps_direction_walking", "effect": "read" },
+        { "name": "maps_direction_bicycling", "effect": "read" },
         { "name": "taxi_estimate", "effect": "read" },
-        { "name": "taxi_create_order", "effect": "order" }
+        { "name": "taxi_generate_ride_app_link", "effect": "read" },
+        { "name": "taxi_create_order", "effect": "order" },
+        { "name": "taxi_query_order", "effect": "read" },
+        { "name": "taxi_get_driver_location", "effect": "read" },
+        { "name": "taxi_cancel_order", "effect": "write" }
       ],
       "sandbox": { "url": "https://mcp.didichuxing.com/mcp-servers-sandbox" },
       "notes": [
-        "正式环境叫车会真实扣费；测试请用 sandbox。",
+        "正式环境叫车会真实派单，行程结束后自动扣费；测试请用 sandbox。",
+        "sandbox 返回固定的模拟数据（地点、价格、订单），只能验证调用流程；返回格式也可能和正式环境不同（如 taxi_query_order）。",
         "下单需要 Pro 版（激活码）；Beta 版只能查价和跳转 App。",
         "直连模式下 key 会以明文 URL 形式写进 agent 配置。"
       ]

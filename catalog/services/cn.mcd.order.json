@@ -3,7 +3,7 @@
   "name": "cn.mcd/order",
   "title": "麦当劳",
   "description": "麦当劳点餐：查门店、查菜单、算价、下单（McDonald's China ordering）",
-  "version": "2026.10.29",
+  "version": "2026.10.30",
   "websiteUrl": "https://github.com/M-China/mcd-mcp-server",
   "remotes": [
     { "type": "streamable-http", "url": "https://mcp.mcd.cn" }
@@ -15,7 +15,7 @@
       "credential": {
         "kind": "static_token",
         "placement": { "in": "header", "name": "Authorization", "format": "Bearer {token}" },
-        "portal_url": "https://github.com/M-China/mcd-mcp-server",
+        "portal_url": "https://open.mcd.cn/mcp",
         "redact_patterns": []
       },
       "auth_failure": [
@@ -27,16 +27,49 @@
       "policy": {
         "preview_before": {
           "create-order": "calculate-price",
-          "mall-create-order": "calculate-price",
-          "party-order-create": "calculate-price"
+          "mall-create-order": "mall-product-detail",
+          "party-order-create": "query-party-store-session",
+          "draw-lottery": "query-lottery-info"
         },
-        "payment_link_fields": ["payUrl", "payLink", "paymentUrl"]
+        "payment_link_fields": ["payH5Url"]
       },
       "tools": [
+        { "name": "now-time-info", "effect": "read" },
+        { "name": "query-nearby-stores", "effect": "read" },
+        { "name": "delivery-query-addresses", "effect": "read" },
+        { "name": "delivery-query-stores", "effect": "read" },
+        { "name": "query-meals", "effect": "read" },
+        { "name": "query-meal-detail", "effect": "read" },
         { "name": "calculate-price", "effect": "read" },
+        { "name": "query-store-coupons", "effect": "read" },
+        { "name": "query-my-coupons", "effect": "read" },
+        { "name": "available-coupons", "effect": "read" },
+        { "name": "query-promotions", "effect": "read" },
+        { "name": "query-meal-assistance", "effect": "read" },
+        { "name": "list-nutrition-foods", "effect": "read" },
+        { "name": "order-list", "effect": "read" },
+        { "name": "query-order", "effect": "read" },
+        { "name": "query-survey-coupon", "effect": "read" },
+        { "name": "query-my-account", "effect": "read" },
+        { "name": "campaign-calendar", "effect": "read" },
+        { "name": "query-mall-products", "effect": "read" },
+        { "name": "mall-product-detail", "effect": "read" },
+        { "name": "mall-gift-products", "effect": "read" },
+        { "name": "mall-order-list", "effect": "read" },
+        { "name": "mall-order-detail", "effect": "read" },
+        { "name": "query-party-city", "effect": "read" },
+        { "name": "query-party-store", "effect": "read" },
+        { "name": "query-party-store-date", "effect": "read" },
+        { "name": "query-party-store-session", "effect": "read" },
+        { "name": "query-lottery-info", "effect": "read" },
+        { "name": "query-my-prizes", "effect": "read" },
+        { "name": "delivery-create-address", "effect": "write" },
+        { "name": "auto-bind-coupons", "effect": "write" },
+        { "name": "cancel-order", "effect": "write" },
         { "name": "create-order", "effect": "order" },
         { "name": "mall-create-order", "effect": "order" },
-        { "name": "party-order-create", "effect": "order" }
+        { "name": "party-order-create", "effect": "order" },
+        { "name": "draw-lottery", "effect": "order" }
       ],
       "notes": [
         "条款限制商业转售与流量变现；取得书面授权前默认使用直连模式。",

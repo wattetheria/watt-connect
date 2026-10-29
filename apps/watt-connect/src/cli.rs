@@ -6,7 +6,7 @@ use clap::{Args, Parser, Subcommand};
     version,
     about = "One MCP for your agent to discover and call official merchant MCP servers.",
     long_about = "Run without a subcommand to serve MCP over stdio (what agents launch via `npx watt-connect`).\n\
-                  Merchant tokens are kept in the system keychain on this machine and never leave it."
+                  Merchant tokens are kept on this machine (encrypted file on macOS, system keychain elsewhere) and never leave it."
 )]
 pub struct Cli {
     #[command(subcommand)]

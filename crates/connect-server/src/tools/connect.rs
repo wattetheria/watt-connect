@@ -66,7 +66,7 @@ pub(super) fn run(server: &ConnectServer, args: &JsonObject) -> Result<Value, Co
                 )),
                 None => steps.push(format!("Run `{command}` in a terminal and paste the token at the prompt.")),
             }
-            steps.push("watt-connect verifies the token with the merchant before saving it to the system keychain.".into());
+            steps.push("watt-connect verifies the token with the merchant before saving it on this computer.".into());
             steps.push(format!(
                 "Then call describe_service(service=\"{}\") to see its tools.",
                 entry.name
