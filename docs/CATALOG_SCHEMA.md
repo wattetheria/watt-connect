@@ -100,7 +100,7 @@ watt-connect 需要的扩展字段全部放在 `_meta["watt/connect"]`。机器�
 { "algorithm": "ed25519", "public_key": "<hex>", "signature": "<hex>" }
 ```
 
-签名对象是快照 JSON 的 JCS（RFC 8785）规范化字节，算法与编码复用 `watt-credential`（与 watt-registry 一致）。
+签名对象是快照 JSON 的 JCS（RFC 8785）规范化字节，算法 `ed25519`、公钥与签名均为 hex（与 watt-registry 的格式一致，由 `connect-catalog/src/verify.rs` 自行实现，直接基于 `ed25519-dalek`）。
 客户端只接受 `catalog/catalog.pub` 中列出的公钥，且只接受版本号不小于当前版本的快照。
 
 ## 新增一个商家

@@ -21,6 +21,7 @@ repository = "https://github.com/wattetheria/watt-connect"
 rust-version = "1.88"
 
 [workspace.dependencies]
+ed25519-dalek = "2.2"
 anyhow = "1.0"
 axum = { version = "0.8", features = ["json", "form"] }
 bytes = "1"
@@ -60,9 +61,6 @@ connect-testkit = { path = "crates/connect-testkit" }
 connect-types = { path = "crates/connect-types" }
 connect-upstream = { path = "crates/connect-upstream" }
 connect-vault = { path = "crates/connect-vault" }
-
-# Sibling checkout, same convention as wattetheria and watt-registry.
-watt-credential = { path = "../watt-credential" }
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }

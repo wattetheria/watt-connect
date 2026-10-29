@@ -44,4 +44,4 @@ cargo run -p watt-connect-catalog -- validate
 (cd npm && npm run check)
 ```
 
-`watt-credential` and `watt-did` must be checked out as siblings (`../watt-credential`, `../watt-did`).
+The workspace is self-contained; do not add path or git dependencies on other repositories.

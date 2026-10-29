@@ -448,6 +448,7 @@ agent 永远只看到这几个工具，商家再多它们也不变：
 | 位置 | 计划 | 实现 | 原因 |
 |---|---|---|---|
 | §4.3 HTTP 客户端 | `reqwest` 0.12 | 0.13（rustls） | rmcp 3.8 依赖 0.13，避免两个版本 |
+| §4.3 目录签名 | 复用 `watt-credential` | 在 `connect-catalog/src/verify.rs` 内直接用 `ed25519-dalek` 实现，格式不变（`ed25519` + hex，JCS 规范化后签名） | watt-connect 是独立项目，不依赖其他仓库：`watt-credential` 以 `../` 路径依赖 `watt-did`，会要求 sibling checkout 并带入整套 DID 解析库，而这里只用到签名/验签几个函数。实现时已交叉验证：同一私钥两边产生的签名逐字节相同，互相可验 |
 | §4.4 `tests/` | 仓库根目录 | `apps/watt-connect/tests/` | 需要 `CARGO_BIN_EXE_watt-connect` 才能驱动真实二进制 |
 | §4.4 | — | 新增 `apps/watt-connect/src/logging.rs`、`.github/actions/watt-deps` | 日志统一脱敏；CI 复用 sibling checkout |
 | §5 schema | — | 新增 `rate_limited[]`、`modes.default`、`notes[]` | 滴滴 `-32001` 限流写进目录而不是代码；麦当劳默认直连（§14.1）；给用户的注意事项 |

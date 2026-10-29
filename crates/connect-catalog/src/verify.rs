@@ -1,13 +1,15 @@
 //! Catalog signatures: Ed25519 over the JCS (RFC 8785) canonical form of the
-//! catalog JSON, using Watt Credential's detached signature primitives (the
-//! same scheme watt-registry uses).
+//! catalog JSON. Keys and signatures are hex encoded and the algorithm is
+//! named `ed25519` — the same format watt-registry uses, implemented here so
+//! watt-connect has no dependency on other Watt repositories.
 
+use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use watt_credential::{DetachedSignature, verify_detached_signature};
+use zeroize::Zeroizing;
 
 pub const SIGNATURE_ALGORITHM: &str = "ed25519";
-pub const ENCODING_HEX: &str = "hex";
 
 /// Contents of `catalog.sig`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -31,11 +33,65 @@ pub enum VerifyError {
     UntrustedKey,
     #[error("catalog signature is invalid: {0}")]
     BadSignature(String),
+    #[error("invalid signing key: {0}")]
+    BadKey(String),
+}
+
+/// A freshly generated key pair, hex encoded. `Debug` is not derived.
+pub struct KeyPair {
+    pub private_key: Zeroizing<String>,
+    pub public_key: String,
+}
+
+/// Generate a new Ed25519 key pair.
+#[must_use]
+pub fn generate_key_pair() -> KeyPair {
+    let mut seed = Zeroizing::new([0_u8; 32]);
+    rand::rng().fill_bytes(seed.as_mut());
+    let signing_key = SigningKey::from_bytes(&seed);
+    KeyPair {
+        private_key: Zeroizing::new(hex::encode(seed.as_ref())),
+        public_key: hex::encode(signing_key.verifying_key().to_bytes()),
+    }
+}
+
+fn signing_key(private_key_hex: &str) -> Result<SigningKey, VerifyError> {
+    let bytes = Zeroizing::new(
+        hex::decode(private_key_hex.trim())
+            .map_err(|error| VerifyError::BadKey(error.to_string()))?,
+    );
+    let seed: [u8; 32] = bytes
+        .as_slice()
+        .try_into()
+        .map_err(|_| VerifyError::BadKey("Ed25519 private key must be 32 bytes".into()))?;
+    Ok(SigningKey::from_bytes(&seed))
+}
+
+/// Hex public key of a hex private key (seed).
+pub fn public_key_of(private_key_hex: &str) -> Result<String, VerifyError> {
+    Ok(hex::encode(
+        signing_key(private_key_hex)?.verifying_key().to_bytes(),
+    ))
 }
 
 /// The exact bytes that are signed: JCS canonical JSON of the catalog.
 pub fn signing_bytes(catalog_json: &Value) -> Result<Vec<u8>, VerifyError> {
     serde_jcs::to_vec(catalog_json).map_err(|error| VerifyError::Canonicalize(error.to_string()))
+}
+
+/// Sign `catalog_bytes` (any JSON formatting) with a hex private key.
+pub fn sign_catalog_bytes(
+    catalog_bytes: &[u8],
+    private_key_hex: &str,
+) -> Result<CatalogSignature, VerifyError> {
+    let key = signing_key(private_key_hex)?;
+    let value: Value = serde_json::from_slice(catalog_bytes)?;
+    let signature = key.sign(&signing_bytes(&value)?);
+    Ok(CatalogSignature {
+        algorithm: SIGNATURE_ALGORITHM.into(),
+        public_key: hex::encode(key.verifying_key().to_bytes()),
+        signature: hex::encode(signature.to_bytes()),
+    })
 }
 
 /// Verify `catalog_bytes` against `signature`, accepting only `trusted_keys`
@@ -48,6 +104,12 @@ pub fn verify_catalog_bytes(
     if trusted_keys.is_empty() {
         return Err(VerifyError::NoTrustedKeys);
     }
+    if signature.algorithm != SIGNATURE_ALGORITHM {
+        return Err(VerifyError::BadSignature(format!(
+            "unsupported algorithm `{}`",
+            signature.algorithm
+        )));
+    }
     let signer = signature.public_key.trim().to_ascii_lowercase();
     if !trusted_keys
         .iter()
@@ -57,17 +119,20 @@ pub fn verify_catalog_bytes(
     }
     let value: Value = serde_json::from_slice(catalog_bytes)?;
     let message = signing_bytes(&value)?;
-    verify_detached_signature(
-        DetachedSignature {
-            algorithm: &signature.algorithm,
-            public_key_encoding: ENCODING_HEX,
-            public_key: &signer,
-            signature_encoding: ENCODING_HEX,
-            signature: signature.signature.trim(),
-        },
-        &message,
-    )
-    .map_err(|error| VerifyError::BadSignature(error.to_string()))
+    let public_key: [u8; 32] = decode_fixed(&signer, "public key")?;
+    let verifying_key = VerifyingKey::from_bytes(&public_key)
+        .map_err(|error| VerifyError::BadSignature(format!("public key: {error}")))?;
+    let signature_bytes: [u8; 64] = decode_fixed(signature.signature.trim(), "signature")?;
+    verifying_key
+        .verify_strict(&message, &Signature::from_bytes(&signature_bytes))
+        .map_err(|error| VerifyError::BadSignature(error.to_string()))
+}
+
+fn decode_fixed<const N: usize>(hex_value: &str, what: &str) -> Result<[u8; N], VerifyError> {
+    hex::decode(hex_value)
+        .map_err(|error| VerifyError::BadSignature(format!("{what}: {error}")))?
+        .try_into()
+        .map_err(|_| VerifyError::BadSignature(format!("{what} must be {N} bytes")))
 }
 
 /// Parse a trusted-keys file: one hex public key per line, `#` comments.
@@ -89,29 +154,27 @@ pub fn builtin_trusted_keys() -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use watt_credential::{SigningKeyMaterial, generate_signing_key, sign_detached};
 
     fn sign(bytes: &[u8]) -> (CatalogSignature, String) {
-        let key = generate_signing_key(SIGNATURE_ALGORITHM).unwrap();
-        let value: Value = serde_json::from_slice(bytes).unwrap();
-        let signature = sign_detached(
-            SigningKeyMaterial {
-                algorithm: SIGNATURE_ALGORITHM,
-                private_key_encoding: ENCODING_HEX,
-                private_key: &key.private_key,
-            },
-            ENCODING_HEX,
-            &signing_bytes(&value).unwrap(),
-        )
-        .unwrap();
-        (
-            CatalogSignature {
-                algorithm: SIGNATURE_ALGORITHM.into(),
-                public_key: key.public_key.clone(),
-                signature,
-            },
-            key.public_key,
-        )
+        let key = generate_key_pair();
+        let signature = sign_catalog_bytes(bytes, &key.private_key).unwrap();
+        assert_eq!(signature.public_key, key.public_key);
+        (signature, key.public_key)
+    }
+
+    #[test]
+    fn rfc8032_test_vector_1() {
+        // RFC 8032 §7.1, TEST 1 (empty message): standard Ed25519, hex encoded.
+        let key = signing_key("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
+            .unwrap();
+        assert_eq!(
+            hex::encode(key.verifying_key().to_bytes()),
+            "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+        );
+        assert_eq!(
+            hex::encode(key.sign(b"").to_bytes()),
+            "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b"
+        );
     }
 
     #[test]
@@ -136,6 +199,21 @@ mod tests {
             verify_catalog_bytes(br#"{"a":1}"#, &signature, &[]),
             Err(VerifyError::NoTrustedKeys)
         ));
+        let other_algorithm = CatalogSignature {
+            algorithm: "rsa".into(),
+            ..signature
+        };
+        assert!(matches!(
+            verify_catalog_bytes(br#"{"a":1}"#, &other_algorithm, &[public_key]),
+            Err(VerifyError::BadSignature(_))
+        ));
+    }
+
+    #[test]
+    fn key_helpers() {
+        let key = generate_key_pair();
+        assert_eq!(public_key_of(&key.private_key).unwrap(), key.public_key);
+        assert!(matches!(public_key_of("abcd"), Err(VerifyError::BadKey(_))));
     }
 
     #[test]

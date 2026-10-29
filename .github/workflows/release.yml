@@ -43,9 +43,6 @@ jobs:
           echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
           grep -q "^version = \"${{ inputs.version }}\"" Cargo.toml || {
             echo "Cargo.toml [workspace.package] version must equal ${{ inputs.version }}" >&2; exit 1; }
-      - uses: ./.github/actions/watt-deps
-        with:
-          token: ${{ secrets.CROSS_REPO_TOKEN || github.token }}
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.97.0"

@@ -85,16 +85,8 @@ are cleared; the local Wattetheria node is direct-only.
 
 ## Development
 
-The workspace uses Watt's sibling-checkout convention: `watt-credential` and
-`watt-did` must be checked out next to this repository.
-
-```bash
-git clone https://github.com/wattetheria/watt-credential ../watt-credential
-```
-
-```bash
-git clone https://github.com/wattetheria/watt-did ../watt-did
-```
+The workspace is self-contained: a plain `git clone` builds with no other
+repositories checked out.
 
 ```bash
 cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace

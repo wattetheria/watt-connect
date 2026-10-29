@@ -264,34 +264,15 @@ mod tests {
     use axum::http::{HeaderMap, StatusCode, header};
     use axum::response::IntoResponse;
     use axum::routing::get;
-    use verify::{CatalogSignature, ENCODING_HEX, SIGNATURE_ALGORITHM, signing_bytes};
-    use watt_credential::{SigningKeyMaterial, generate_signing_key, sign_detached};
+    use verify::{CatalogSignature, generate_key_pair, sign_catalog_bytes};
 
     fn signed_catalog(version: &str) -> (Vec<u8>, CatalogSignature, String) {
         let mut catalog = bundled::bundled_catalog();
         catalog.version = version.to_owned();
         let bytes = serde_json::to_vec_pretty(&catalog).unwrap();
-        let key = generate_signing_key(SIGNATURE_ALGORITHM).unwrap();
-        let value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        let signature = sign_detached(
-            SigningKeyMaterial {
-                algorithm: SIGNATURE_ALGORITHM,
-                private_key_encoding: ENCODING_HEX,
-                private_key: &key.private_key,
-            },
-            ENCODING_HEX,
-            &signing_bytes(&value).unwrap(),
-        )
-        .unwrap();
-        (
-            bytes,
-            CatalogSignature {
-                algorithm: SIGNATURE_ALGORITHM.into(),
-                public_key: key.public_key.clone(),
-                signature,
-            },
-            key.public_key,
-        )
+        let key = generate_key_pair();
+        let signature = sign_catalog_bytes(&bytes, &key.private_key).unwrap();
+        (bytes, signature, key.public_key)
     }
 
     async fn serve(bytes: Vec<u8>, signature: CatalogSignature) -> Url {

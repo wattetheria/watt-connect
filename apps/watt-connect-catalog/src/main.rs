@@ -7,13 +7,12 @@ use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 use connect_catalog::validate::{Severity, has_errors, validate_catalog};
 use connect_catalog::verify::{
-    CatalogSignature, ENCODING_HEX, SIGNATURE_ALGORITHM, parse_trusted_keys, signing_bytes,
+    CatalogSignature, generate_key_pair, parse_trusted_keys, public_key_of, sign_catalog_bytes,
     verify_catalog_bytes,
 };
 use connect_catalog::{Catalog, ServerEntry, compare_versions};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use watt_credential::{SigningKeyMaterial, derive_public_key, generate_signing_key, sign_detached};
 
 const KEY_ENV: &str = "WATT_CONNECT_CATALOG_SIGNING_KEY";
 
@@ -84,7 +83,10 @@ fn main() -> Result<()> {
             pubkeys,
         } => verify(&catalog, &sig, &pubkeys),
         Command::Diff { old, new } => diff(&old, &new),
-        Command::Keygen => keygen(),
+        Command::Keygen => {
+            keygen();
+            Ok(())
+        }
     }
 }
 
@@ -161,12 +163,11 @@ fn build(dir: &Path, out: &Path, version: Option<String>) -> Result<()> {
 
 fn sign(catalog_path: &Path, out: &Path, pubkeys: &Path) -> Result<()> {
     let seed = std::env::var(KEY_ENV).with_context(|| format!("{KEY_ENV} is not set"))?;
-    let key = SigningKeyMaterial {
-        algorithm: SIGNATURE_ALGORITHM,
-        private_key_encoding: ENCODING_HEX,
-        private_key: seed.trim(),
-    };
-    let public_key = derive_public_key(key, ENCODING_HEX).context("invalid signing key")?;
+    sign_with_key(catalog_path, out, pubkeys, &seed)
+}
+
+fn sign_with_key(catalog_path: &Path, out: &Path, pubkeys: &Path, private_key: &str) -> Result<()> {
+    let public_key = public_key_of(private_key).context("invalid signing key")?;
     let trusted = parse_trusted_keys(&std::fs::read_to_string(pubkeys)?);
     if !trusted.contains(&public_key) {
         bail!(
@@ -179,14 +180,7 @@ fn sign(catalog_path: &Path, out: &Path, pubkeys: &Path) -> Result<()> {
     if has_errors(&validate_catalog(&catalog)) {
         bail!("refusing to sign an invalid catalog");
     }
-    let value: serde_json::Value = serde_json::from_slice(&bytes)?;
-    let signature =
-        sign_detached(key, ENCODING_HEX, &signing_bytes(&value)?).context("sign catalog")?;
-    let signature = CatalogSignature {
-        algorithm: SIGNATURE_ALGORITHM.into(),
-        public_key,
-        signature,
-    };
+    let signature = sign_catalog_bytes(&bytes, private_key).context("sign catalog")?;
     verify_catalog_bytes(&bytes, &signature, &trusted)?;
     std::fs::write(out, serde_json::to_vec_pretty(&signature)?)?;
     println!("signed {} -> {}", catalog_path.display(), out.display());
@@ -255,12 +249,11 @@ fn diff(old: &Path, new: &Path) -> Result<()> {
     Ok(())
 }
 
-fn keygen() -> Result<()> {
-    let key = generate_signing_key(SIGNATURE_ALGORITHM)?;
+fn keygen() {
+    let key = generate_key_pair();
     eprintln!("Store the private key ONLY as the CATALOG_SIGNING_KEY secret. Never commit it.");
     println!("public_key  = {}", key.public_key);
-    println!("private_key = {}", key.private_key);
-    Ok(())
+    println!("private_key = {}", key.private_key.as_str());
 }
 
 #[cfg(test)]
@@ -276,32 +269,17 @@ mod tests {
         let out = dir.path().join("catalog.json");
         build(&root, &out, Some("2099.1.1".into())).unwrap();
 
-        let key = generate_signing_key(SIGNATURE_ALGORITHM).unwrap();
+        let key = generate_key_pair();
         let pubkeys = dir.path().join("catalog.pub");
         std::fs::write(&pubkeys, format!("# test\n{}\n", key.public_key)).unwrap();
-        let bytes = std::fs::read(&out).unwrap();
-        let value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        let signature = sign_detached(
-            SigningKeyMaterial {
-                algorithm: SIGNATURE_ALGORITHM,
-                private_key_encoding: ENCODING_HEX,
-                private_key: &key.private_key,
-            },
-            ENCODING_HEX,
-            &signing_bytes(&value).unwrap(),
-        )
-        .unwrap();
         let sig = dir.path().join("catalog.sig");
-        std::fs::write(
-            &sig,
-            serde_json::to_vec(&CatalogSignature {
-                algorithm: SIGNATURE_ALGORITHM.into(),
-                public_key: key.public_key,
-                signature,
-            })
-            .unwrap(),
-        )
-        .unwrap();
+        sign_with_key(&out, &sig, &pubkeys, &key.private_key).unwrap();
+        let written: CatalogSignature =
+            serde_json::from_slice(&std::fs::read(&sig).unwrap()).unwrap();
+        assert_eq!(written.public_key, key.public_key);
+
+        let other = generate_key_pair();
+        assert!(sign_with_key(&out, &sig, &pubkeys, &other.private_key).is_err());
         verify(&out, &sig, &pubkeys).unwrap();
         diff(&out, &out).unwrap();
     }
